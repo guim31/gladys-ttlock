@@ -1,0 +1,29 @@
+{
+  "list": [
+    {
+      "recordId": 1635556821,
+      "lockId": 1001001,
+      "recordTypeFromLock": 1,
+      "recordType": 1,
+      "success": 1,
+      "username": "alex@example.com",
+      "lockDate": 1616674054000,
+      "serverDate": 1616674056000
+    },
+    {
+      "recordId": 1635539709,
+      "lockId": 1001001,
+      "recordTypeFromLock": 4,
+      "recordType": 4,
+      "success": 1,
+      "username": "Alex",
+      "keyboardPwd": "383834",
+      "lockDate": 1616675054000,
+      "serverDate": 1616676056000
+    }
+  ],
+  "pageNo": 1,
+  "pageSize": 20,
+  "pages": 1,
+  "total": 2
+}

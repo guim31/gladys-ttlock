@@ -1,67 +1,129 @@
-# Template de démonstration
+# TTLock
 
-Ceci est la documentation utilisateur de l'intégration. Gladys ré-héberge ce
-fichier et affiche un lien **Documentation** permanent vers lui dans l'écran
-de configuration (dans la langue de l'utilisateur, avec l'anglais en repli) —
-c'est au moment de configurer que l'utilisateur en a le plus besoin. Gardez
-les courtes indications d'accueil dans les blocs `section` du `config_schema`
-du manifest ; mettez ici le pas-à-pas détaillé (captures d'écran, dépannage…).
+Intègre vos **serrures connectées TTLock** à Gladys par l'API cloud officielle de la TTLock Open Platform : serrures de porte, cadenas et boîtes à clés des nombreuses marques construites sur TTLock (la serrure est installée dans l'application TTLock), jointes par une passerelle TTLock (G2, G3...) ou leur propre WiFi.
 
-## Ce que vous obtenez
+> **Développée sans le matériel : vos retours sont les bienvenus.** Cette intégration a été écrite d'après la documentation de l'API TTLock et les réponses publiées par l'intégration Home Assistant, sans serrure ni compte réels. Dites ce qui marche ou non sur le forum Gladys ou dans une issue GitHub.
 
-Six appareils de démonstration apparaissent après l'installation : une
-station météo (vraies données Open-Meteo), un interrupteur, une lampe
-variable, une prise connectée avec mesure de puissance, un détecteur de
-mouvement et une caméra.
+Cette intégration n'est affiliée ni à TTLock, ni à Sciener, ni à aucune marque de serrure.
+
+## Présentation
+
+- Un appareil Gladys par serrure du compte TTLock, avec son **état** (verrouillée / déverrouillée), sa **batterie**, l'état **en ligne de sa passerelle** et son **dernier accès** (qui, comment, quand).
+- Un bouton **Verrouiller**. Verrouiller est toujours sans danger : c'est la seule commande d'un appareil.
+- **Le déverrouillage est désactivé par défaut**, et jamais proposé comme interrupteur, bouton du tableau de bord ou commande vocale. Si vous l'autorisez explicitement, il n'existe que comme action de scène. De même pour le mode passage.
+- Deux déclencheurs de scène : **Serrure déverrouillée** (avec la méthode : code, carte, empreinte, application...) et **Batterie faible**.
+- Un widget de tableau de bord : état, batterie, passerelle, dernier accès et un bouton **Verrouiller**.
+
+## Prérequis
+
+- Gladys Assistant 5.1.0 ou plus récent.
+- Vos serrures ajoutées dans l'**application TTLock**, avec le compte qui les administre (l'« admin » de la serrure, pas une personne qui a reçu une eKey).
+- Pour lire l'état et verrouiller depuis Gladys : une **passerelle TTLock** (G2, G3, G4...) appairée à la serrure, ou une **serrure WiFi**. Une serrure Bluetooth sans passerelle n'affiche que sa batterie et ses derniers accès, tels que l'application les synchronise.
+- Une **application développeur** gratuite sur la TTLock Open Platform :
+  1. Créez un compte sur [euopen.ttlock.com](https://euopen.ttlock.com/manager) (Chine : cnopen.ttlock.com). Ce compte développeur n'est **pas** votre compte de l'application TTLock.
+  2. Créez une application. TTLock peut mettre quelques jours à la valider.
+  3. Notez son **client ID** et son **client secret**.
 
 ## Configuration
 
-1. Ouvrez l'onglet **Configuration** de l'intégration.
-2. Renseignez la **latitude** et la **longitude** que la station météo de
-   démonstration doit observer (Paris par défaut), et choisissez votre unité
-   de température. L'**intervalle de rafraîchissement** règle la fréquence
-   de lecture de la station météo et de la puissance de la prise : toutes
-   les 5 minutes par défaut, toutes les minutes au plus.
-3. Enregistrez : les appareils apparaissent dans l'onglet **Découverte**,
-   prêts à être ajoutés.
+Dans Gladys, ouvrez **Intégrations → TTLock → Configuration** et renseignez :
 
-Le réglage **Préférer la connexion locale** pilote la prise de
-démonstration : elle affiche en badge le canal réellement utilisé (local ou
-cloud), avec un point orange quand elle fonctionne en mode dégradé (local
-refusé, bascule cloud).
+| Champ                                      | À saisir                                                                                               |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| Cloud TTLock                               | « Europe et monde » pour une application créée sur euopen.ttlock.com, « Chine » pour cnopen.           |
+| Client ID / Client secret                  | Les valeurs de votre application développeur.                                                          |
+| Compte / mot de passe de l'app TTLock      | L'adresse e-mail ou le numéro de téléphone et le mot de passe **de connexion à l'application TTLock**. |
+| Intervalle de relève                       | 5, 10, 15 ou 30 minutes (voir [Appels d'API et quota](#appels-dapi-et-quota)).                         |
+| Batterie faible sous                       | Le niveau sous lequel le déclencheur « Batterie faible » se lance.                                     |
+| Langue des textes des appareils            | Langue des noms des fonctionnalités (figés à l'ajout d'un appareil) et du texte du dernier accès.      |
+| Autoriser le déverrouillage par les scènes | Désactivé par défaut. Lisez d'abord [Sécurité](#sécurité).                                             |
+| Autoriser le mode passage par les scènes   | Désactivé par défaut.                                                                                  |
 
-## Actions
+Cliquez sur **Tester la connexion** : le message donne le nombre de serrures et de passerelles, et une estimation des appels d'API par jour. Ouvrez ensuite l'onglet **Découverte** et ajoutez vos serrures.
 
-- **Tester le fournisseur météo** — effectue une requête en direct vers
-  Open-Meteo et affiche la température et l'humidité actuelles sous le
-  bouton.
-- **Identifier un appareil** — choisissez un de vos appareils dans la liste
-  et il se signale (la lampe de démonstration « clignote » dans les logs).
+Le mot de passe part chez TTLock haché en MD5, comme le fait l'application TTLock. Le jeton d'accès renvoyé par TTLock (valable 90 jours, renouvelé automatiquement) est rangé dans le volume privé de l'intégration, `/data`.
 
-## Scènes
+## Appareils
 
-L'intégration ajoute ses propres cartes à l'éditeur de scènes (Gladys 5.1
-ou plus récent), dans la catégorie **Intégrations** :
+Chaque serrure du compte devient un appareil, nommé comme dans l'application TTLock.
 
-- **Mouvement détecté** (déclencheur) — lance la scène quand un détecteur
-  de démonstration voit bouger quelque chose. Choisissez éventuellement le
-  détecteur et ce qui a bougé (personne, animal) ; laissés vides, toute
-  détection correspond. Les actions suivantes peuvent lire ce qui a bougé
-  avec `{{triggerEvent.data.target}}`.
-- **Identifier un appareil** (action) — fait se signaler l'appareil choisi.
-  Elle indique si l'appareil a pu se signaler, pour que les actions
-  suivantes puissent en dépendre.
+| Fonctionnalité      | Type                      | Ce qu'elle montre                                                                                                             |
+| ------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| État de la serrure  | État de serrure (lecture) | Verrouillée ou déverrouillée, telle que la serrure répond par sa passerelle ou son WiFi.                                      |
+| Verrouiller         | Bouton poussoir           | Verrouille la porte. Seulement pour une serrure avec passerelle ou WiFi.                                                      |
+| Batterie            | Batterie (%)              | Le niveau de batterie de la serrure.                                                                                          |
+| Passerelle en ligne | Oui / Non                 | Une passerelle à portée de la serrure est connectée à TTLock. Seulement pour une serrure avec passerelle.                     |
+| Dernier accès       | Texte                     | Le dernier déverrouillage : comment, qui (compte de l'application, ou nom donné au code, à la carte ou à l'empreinte), quand. |
 
-## Tableau de bord
+L'état de la serrure n'est jamais un interrupteur : un interrupteur pourrait ouvrir la porte d'un seul geste, depuis une scène qui « éteint tout », ou depuis un assistant vocal.
 
-Ajoutez le widget **État de la démo** à un tableau de bord : il affiche en
-direct la température de la station météo et la puissance de la prise du
-bureau, la connexion utilisée par la prise (en orange si dégradée) et la
-position observée. Son bouton **Identifier la lampe** fait se signaler la
-lampe de démonstration.
+Rafraîchissement des valeurs : chaque relève lit les nouveaux enregistrements de la serrure (les accès) et l'état des passerelles. L'état est demandé à la serrure elle-même, par sa passerelle, au démarrage, après une commande, dès qu'un nouvel accès ou verrouillage apparaît, et toutes les 30 minutes sinon : le demander réveille la serrure, ce qui coûte sa batterie et des appels d'API.
+
+## Widget
+
+**Serrure TTLock** : choisissez une serrure dans les réglages du widget. Il montre la batterie, l'état, la passerelle, le dernier accès et un bouton **Verrouiller**. Il n'y a pas de bouton de déverrouillage. Pour une serrure sans passerelle ni WiFi, une phrase remplace le bouton.
+
+## Déclencheurs de scène
+
+**Serrure déverrouillée** : quelqu'un a déverrouillé une serrure. Filtres : la serrure (vide : n'importe laquelle) et la méthode (vide : n'importe laquelle). Informations transmises à la scène : le nom de la serrure, qui (le compte de l'application, ou le nom du code, de la carte ou de l'empreinte) et comment.
+
+- Il se lance à la relève qui voit l'accès : jusqu'à un intervalle de relève après l'ouverture de la porte.
+- Un accès remonté en retard par la passerelle (plus de 15 minutes après les faits) met à jour le dernier accès mais ne lance rien : c'est de l'histoire, pas une nouvelle.
+- Les tentatives échouées ne lancent rien.
+
+**Batterie faible** : la batterie d'une serrure est passée sous le niveau configuré. Il se lance une fois, puis de nouveau seulement après une remontée de 5 points au-dessus du seuil (piles neuves). Informations transmises : le nom de la serrure et le niveau de batterie.
+
+## Actions de scène
+
+- **Verrouiller une serrure TTLock** : verrouille, puis relit l'état. Résultat : « Verrouillée selon la serrure » (oui / non).
+- **Déverrouiller une serrure TTLock** : refusée tant que « Autoriser le déverrouillage par les scènes » est désactivé. Résultat : « Déverrouillée selon la serrure ».
+- **Mode passage TTLock** : refusée tant que « Autoriser le mode passage par les scènes » est désactivé. Activé : une fois ouverte, la serrure reste ouverte, toute la journée, tous les jours, jusqu'à la désactivation du mode passage ; elle ne s'ouvre pas d'elle-même. Désactivé : la serrure se reverrouille normalement.
+
+## Sécurité
+
+Le déverrouillage et le mode passage ouvrent votre porte à qui se trouve devant. C'est pourquoi ils sont désactivés par défaut et n'existent que comme actions de scène, jamais comme interrupteur, bouton de widget, commande vocale ou appareil HomeKit / Google Home / Alexa.
+
+Avant de les autoriser :
+
+- Pensez à tous les déclencheurs de la scène : une présence détectée à tort, un téléphone oublié à la maison, une scène lancée depuis le tableau de bord par n'importe qui dans la maison.
+- Les utilisateurs de Gladys peuvent modifier les scènes : chacun d'eux peut alors ouvrir la porte.
+- Pour un visiteur, préférez un code temporaire ou une eKey envoyée depuis l'application TTLock.
+
+## Exemples de scènes
+
+- **Qui est rentré** : déclencheur « Serrure déverrouillée », méthode = empreinte ou code → envoyer le message « {{nom de la serrure}} : {{qui}} ({{comment}}) ».
+- **Fermer pour la nuit** : tous les jours à 23 h, si l'état de la porte d'entrée est « déverrouillée » → action « Verrouiller une serrure TTLock ».
+- **Changer les piles** : déclencheur « Batterie faible » → envoyer le message « Changez les piles de {{nom de la serrure}} ({{batterie}} %) ».
+- **Départ de la maison** : quand la dernière personne part → « Verrouiller une serrure TTLock » sur chaque porte, puis envoyer un message si « Verrouillée selon la serrure » vaut non.
+
+## Appels d'API et quota
+
+TTLock ne peut pas prévenir un Gladys local : son URL de rappel doit être joignable depuis Internet. L'intégration interroge donc le cloud TTLock. TTLock limite les appels d'API d'une application développeur (erreur 30006, « exceeds the restrictions of API call number ») ; la limite elle-même n'est pas publiée.
+
+Ce que coûte une relève :
+
+- à chaque relève : 1 appel pour les passerelles du compte, 1 appel par serrure (ses enregistrements) ;
+- toutes les 30 minutes, et après chaque accès : 1 appel par serrure avec passerelle ou WiFi (son état) ;
+- toutes les heures : 1 appel pour la liste des serrures, 1 par serrure avec passerelle (ses passerelles).
+
+Une serrure avec passerelle, toutes les 5 minutes : environ 670 appels par jour, 20 000 par mois. Toutes les 15 minutes : environ 290 par jour. **Tester la connexion** donne l'estimation pour vos serrures. Si la limite est atteinte, l'écran de configuration le dit : choisissez un intervalle plus long.
+
+Seules les serrures ajoutées dans Gladys sont relevées.
 
 ## Dépannage
 
-L'intégration journalise tout ce qu'elle fait : consultez les logs de
-l'intégration depuis l'interface Gladys (ou `docker logs` sur l'hôte) avec
-`LOG_LEVEL=debug` pour le détail complet.
+- **« TTLock refuse la connexion »** : vérifiez le client ID et le secret (page de l'application sur l'Open Platform), et que le compte est celui de l'**application TTLock**, pas le compte développeur. La région doit être celle de l'application.
+- **Aucune serrure dans l'onglet Découverte** : le compte doit être administrateur des serrures. Les serrures partagées avec vous par eKey ne sont pas listées par TTLock.
+- **L'état reste inconnu** : la serrure a besoin d'une passerelle (ou du WiFi), et la passerelle doit être en ligne. Regardez « Passerelle en ligne ».
+- **« Limite d'appels de l'API TTLock atteinte »** : choisissez un intervalle de relève plus long, ou retirez de Gladys les serrures inutiles.
+- **Le dernier accès arrive en retard** : les accès rejoignent le cloud par la passerelle, puis Gladys à la relève suivante.
+- Journaux détaillés : mettez la variable d'environnement `LOG_LEVEL` de l'intégration à `debug`. Jetons, mots de passe et codes ne sont jamais écrits.
+
+## Limites
+
+- Développée sans le matériel ni compte TTLock : les réponses de l'API viennent de sa documentation.
+- Pas d'événements en temps réel : le délai est l'intervalle de relève. Le rappel de TTLock exige une URL publique.
+- Un seul compte TTLock par Gladys. Seulement les serrures que le compte administre.
+- Pas de gestion du capteur d'ouverture, des codes, cartes ou empreintes : utilisez l'application TTLock.
+- Au plus 50 enregistrements par serrure sont lus à chaque relève : sur une serrure très sollicitée avec un intervalle long, des accès peuvent manquer.
+- Les noms des fonctionnalités sont figés à l'ajout de l'appareil : changer la langue ensuite ne renomme que les nouveaux appareils.

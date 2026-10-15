@@ -1,45 +1,75 @@
 // -----------------------------------------------------------------------------
-// Integration configuration.
-//
-// The configuration is filled in by the user in Gladys, from the `config_schema`
-// declared in `gladys-assistant-integration.json`. The SDK fetches it for you
-// (`gladys.getConfig()`) and notifies you of every change through
-// `gladys.onConfigUpdated()`.
-//
-// This module only provides defaults and normalizes the received object, so the
-// rest of the code never has to deal with `undefined`.
+// Integration configuration: defaults (they mirror the `default` values of the
+// manifest `config_schema`, see test/manifest.test.js) and normalization, so
+// the rest of the code never deals with strings, blanks or `undefined`.
 // -----------------------------------------------------------------------------
 
-// Defaults: they MUST stay consistent with the `default` values declared in the
-// `config_schema` of the manifest.
-export const DEFAULT_CONFIG = {
-  latitude: 48.8566, // Paris
-  longitude: 2.3522,
-  unit: 'celsius', // 'celsius' | 'fahrenheit'
-  // Seconds between two reads of the polled sensors. Gladys polls at most once
-  // a minute: slower intervals are applied by skipping polls (see
-  // createPoller in src/devices/index.js).
-  poll_frequency: 300,
-  // Reserved key (NOT in config_schema): because the manifest declares both
-  // 'local' and 'cloud' in its `transports` field, Gladys shows a standard
-  // "Prefer the local connection" toggle and sends the user's choice here.
-  // Read-only for the integration; defaults to true.
-  GLADYS_PREFER_LOCAL: true,
+export const LANGUAGES = ['en', 'fr', 'de', 'es'];
+
+// TTLock runs one cloud per region, with the same API on another host: an
+// account, its application and its locks live in one of them only.
+export const REGIONS = {
+  eu: 'https://euapi.ttlock.com',
+  cn: 'https://cnapi.ttlock.com',
 };
+
+// Refresh intervals offered in the configuration, in minutes. Each refresh
+// costs API calls (see docs): nothing faster than 5 minutes.
+export const POLL_MINUTES = ['5', '10', '15', '30'];
+
+// Battery levels (percent) under which the "Low battery" trigger fires.
+export const BATTERY_THRESHOLDS = ['10', '15', '20', '25', '30'];
+
+export const DEFAULT_CONFIG = {
+  region: 'eu',
+  client_id: '',
+  client_secret: '',
+  username: '',
+  password: '',
+  poll_minutes: '5',
+  battery_threshold: '20',
+  language: 'fr',
+  allow_unlock: false,
+  allow_passage_mode: false,
+};
+
+const text = (value) => (typeof value === 'string' ? value.trim() : '');
+const oneOf = (value, allowed, fallback) =>
+  allowed.includes(String(value)) ? String(value) : fallback;
 
 /**
  * Merge the user config with the defaults.
- * @param {Record<string, unknown>} raw config returned by the SDK
+ * @param {Record<string, unknown>} [raw] config returned by the SDK
  */
 export function normalizeConfig(raw = {}) {
   return {
-    ...DEFAULT_CONFIG,
-    ...raw,
-    // Force the types: config may arrive as strings from a form.
-    latitude: Number(raw.latitude ?? DEFAULT_CONFIG.latitude),
-    longitude: Number(raw.longitude ?? DEFAULT_CONFIG.longitude),
-    poll_frequency: Number(raw.poll_frequency ?? DEFAULT_CONFIG.poll_frequency),
-    // The preference is a boolean; anything but an explicit false means true.
-    GLADYS_PREFER_LOCAL: raw.GLADYS_PREFER_LOCAL !== false,
+    region: oneOf(raw.region, Object.keys(REGIONS), DEFAULT_CONFIG.region),
+    client_id: text(raw.client_id),
+    client_secret: text(raw.client_secret),
+    // The TTLock app accepts an e-mail address or a phone number.
+    username: text(raw.username),
+    // A password may begin or end with a space: kept as typed.
+    password: typeof raw.password === 'string' ? raw.password : '',
+    poll_minutes: oneOf(raw.poll_minutes, POLL_MINUTES, DEFAULT_CONFIG.poll_minutes),
+    battery_threshold: oneOf(
+      raw.battery_threshold,
+      BATTERY_THRESHOLDS,
+      DEFAULT_CONFIG.battery_threshold,
+    ),
+    language: oneOf(raw.language, LANGUAGES, DEFAULT_CONFIG.language),
+    // Opening the door from Gladys needs an explicit yes: anything but true is no.
+    allow_unlock: raw.allow_unlock === true,
+    allow_passage_mode: raw.allow_passage_mode === true,
   };
 }
+
+/** All four account fields are filled in. */
+export function isConfigured(config) {
+  return Boolean(config.client_id && config.client_secret && config.username && config.password);
+}
+
+/** Refresh period, in milliseconds. */
+export const pollPeriodMs = (config) => Number(config.poll_minutes) * 60 * 1000;
+
+/** Battery threshold, in percent. */
+export const batteryThreshold = (config) => Number(config.battery_threshold);

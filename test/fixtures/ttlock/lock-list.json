@@ -1,0 +1,43 @@
+{
+  "list": [
+    {
+      "lockId": 1001001,
+      "lockName": "S31_a1b2c3",
+      "lockAlias": "Front door",
+      "lockMac": "AA:BB:CC:00:00:01",
+      "electricQuantity": 90,
+      "featureValue": "F44354CD5F3",
+      "hasGateway": 1,
+      "lockData": "<REMOVED>",
+      "groupId": 456,
+      "groupName": "Home",
+      "date": 1669690212000
+    },
+    {
+      "lockId": 1001002,
+      "lockName": "W6_d4e5f6",
+      "lockAlias": "Garage",
+      "lockMac": "AA:BB:CC:00:00:02",
+      "electricQuantity": 64,
+      "featureValue": "1000F44354CD5F3",
+      "hasGateway": 0,
+      "lockData": "<REMOVED>",
+      "date": 1682201024000
+    },
+    {
+      "lockId": 1001003,
+      "lockName": "YS1003_c18c9c",
+      "lockAlias": "Key box",
+      "lockMac": "AA:BB:CC:00:00:03",
+      "electricQuantity": 55,
+      "featureValue": "3F0421C4F5F3",
+      "hasGateway": 0,
+      "lockData": "<REMOVED>",
+      "date": 1528878944000
+    }
+  ],
+  "pageNo": 1,
+  "pageSize": 1000,
+  "pages": 1,
+  "total": 3
+}
