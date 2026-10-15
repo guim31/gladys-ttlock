@@ -360,6 +360,7 @@ test('a new configuration signs in again and follows the new language', async (t
   await w.fake.configUpdated({ ...BASE_CONFIG, language: 'fr', poll_minutes: '15' });
   assert.equal(w.hub.config.poll_minutes, '15');
   assert.equal(last(w, FRONT_DOOR, 'last_access'), 'Aucun');
+  assert.equal(discovered(w, FRONT_DOOR).features[0].name, 'État de la serrure');
 });
 
 test('without credentials, the integration waits and says what to fill in', async (t) => {

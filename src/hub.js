@@ -137,8 +137,10 @@ export class Hub {
       return;
     }
     this.stopped = false;
-    // Names are fixed at device creation; a new language is for new devices.
+    // Names are fixed at device creation; a new language is for new devices:
+    // publish them again in any case.
     this.locksReadAt = null;
+    this.publishPending = true;
     await this.cycle({ forceState: true });
     this.schedule();
   }
@@ -319,7 +321,8 @@ export class Hub {
     await this.setStatus(true);
 
     const after = JSON.stringify(locks.map((lock) => structureOf(lock)));
-    if (firstRead || before !== after) {
+    if (firstRead || this.publishPending || before !== after) {
+      this.publishPending = false;
       await this.publishDevices();
     }
 
