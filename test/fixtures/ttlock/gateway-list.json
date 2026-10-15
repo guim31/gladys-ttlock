@@ -1,0 +1,17 @@
+{
+  "list": [
+    {
+      "gatewayId": 78979,
+      "gatewayMac": "AA:BB:CC:00:10:01",
+      "gatewayName": "Hall gateway",
+      "gatewayVersion": 2,
+      "networkName": "HOME-WIFI",
+      "lockNum": 1,
+      "isOnline": 1
+    }
+  ],
+  "pageNo": 1,
+  "pageSize": 200,
+  "pages": 1,
+  "total": 1
+}

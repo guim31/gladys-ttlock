@@ -1,177 +1,643 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "TTLock",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "TTLock smart locks through the cloud: state, battery, last access, locking and triggers.",
+    "fr": "Serrures TTLock par le cloud : état, batterie, dernier accès, verrouillage et déclencheurs.",
+    "de": "TTLock-Schlösser über die Cloud: Status, Batterie, letzter Zugang, Abschließen, Auslöser.",
+    "es": "Cerraduras TTLock por la nube: estado, batería, último acceso, bloqueo y disparadores."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-ttlock:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-ttlock/main/cover.png",
+  "categories": ["security"],
+  "transports": ["cloud"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Getting started",
+        "fr": "Pour commencer",
+        "de": "Erste Schritte",
+        "es": "Para empezar"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "Create a free application on the TTLock Open Platform (sign up, then create an application; approval can take a few days): it gives a client ID and a secret. Then fill in the account of the TTLock app that owns the locks, not the developer account. Locks are reached through a gateway (G2, G3...) or their own WiFi.",
+        "fr": "Créez une application gratuite sur la TTLock Open Platform (inscription, puis création d'une application ; la validation peut prendre quelques jours) : elle donne un client ID et un secret. Renseignez ensuite le compte de l'application TTLock qui possède les serrures, pas le compte développeur. Les serrures sont jointes par une passerelle (G2, G3...) ou leur propre WiFi.",
+        "de": "Lege auf der TTLock Open Platform eine kostenlose Anwendung an (registrieren, dann Anwendung anlegen; die Freigabe kann einige Tage dauern): So erhältst du eine Client-ID und ein Secret. Gib danach das Konto der TTLock-App ein, dem die Schlösser gehören, nicht das Entwicklerkonto. Die Schlösser werden über ein Gateway (G2, G3...) oder ihr eigenes WLAN erreicht.",
+        "es": "Cree una aplicación gratuita en la TTLock Open Platform (regístrese y cree una aplicación; la aprobación puede tardar unos días): le da un client ID y un secreto. Después introduzca la cuenta de la aplicación TTLock propietaria de las cerraduras, no la cuenta de desarrollador. Las cerraduras se alcanzan mediante una pasarela (G2, G3...) o su propio WiFi."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://euopen.ttlock.com/manager",
+          "label": {
+            "en": "TTLock Open Platform (Europe)",
+            "fr": "TTLock Open Platform (Europe)",
+            "de": "TTLock Open Platform (Europa)",
+            "es": "TTLock Open Platform (Europa)"
+          }
+        },
+        {
+          "url": "https://github.com/guim31/gladys-ttlock/blob/main/docs/en.md",
+          "label": {
+            "en": "Step-by-step guide",
+            "fr": "Guide pas à pas",
+            "de": "Schritt-für-Schritt-Anleitung",
+            "es": "Guía paso a paso"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
-      },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
-    },
-    {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
-      },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
-    },
-    {
-      "key": "unit",
+      "key": "region",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
-      "required": false,
-      "default": "celsius",
+      "label": {
+        "en": "TTLock cloud",
+        "fr": "Cloud TTLock",
+        "de": "TTLock-Cloud",
+        "es": "Nube de TTLock"
+      },
+      "description": {
+        "en": "Where the application was created: euopen.ttlock.com (Europe and the rest of the world) or cnopen.ttlock.com (China).",
+        "fr": "Là où l'application a été créée : euopen.ttlock.com (Europe et reste du monde) ou cnopen.ttlock.com (Chine).",
+        "de": "Wo die Anwendung angelegt wurde: euopen.ttlock.com (Europa und Rest der Welt) oder cnopen.ttlock.com (China).",
+        "es": "Donde se creó la aplicación: euopen.ttlock.com (Europa y resto del mundo) o cnopen.ttlock.com (China)."
+      },
+      "required": true,
+      "default": "eu",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "eu",
+          "label": {
+            "en": "Europe and world",
+            "fr": "Europe et monde",
+            "de": "Europa und Welt",
+            "es": "Europa y mundo"
+          }
+        },
+        {
+          "value": "cn",
+          "label": { "en": "China", "fr": "Chine", "de": "China", "es": "China" }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "key": "client_id",
+      "type": "string",
+      "label": { "en": "Client ID", "fr": "Client ID", "de": "Client-ID", "es": "Client ID" },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "Shown on the page of the application, on the TTLock Open Platform.",
+        "fr": "Affiché sur la page de l'application, sur la TTLock Open Platform.",
+        "de": "Steht auf der Seite der Anwendung in der TTLock Open Platform.",
+        "es": "Se muestra en la página de la aplicación, en la TTLock Open Platform."
+      },
+      "required": true
+    },
+    {
+      "key": "client_secret",
+      "type": "secret",
+      "label": {
+        "en": "Client secret",
+        "fr": "Client secret",
+        "de": "Client-Secret",
+        "es": "Client secret"
+      },
+      "required": true
+    },
+    {
+      "key": "username",
+      "type": "string",
+      "label": {
+        "en": "TTLock app account",
+        "fr": "Compte de l'application TTLock",
+        "de": "Konto der TTLock-App",
+        "es": "Cuenta de la aplicación TTLock"
+      },
+      "description": {
+        "en": "The e-mail address or phone number you sign in to the TTLock app with. Use the account that administers the locks.",
+        "fr": "L'adresse e-mail ou le numéro de téléphone de connexion à l'application TTLock. Utilisez le compte administrateur des serrures.",
+        "de": "Die E-Mail-Adresse oder Telefonnummer, mit der du dich in der TTLock-App anmeldest. Nimm das Konto, das die Schlösser verwaltet.",
+        "es": "La dirección de correo o el número de teléfono con el que inicia sesión en la aplicación TTLock. Use la cuenta administradora de las cerraduras."
+      },
+      "placeholder": {
+        "en": "e.g. name@example.com",
+        "fr": "ex. nom@exemple.fr",
+        "de": "z. B. name@beispiel.de",
+        "es": "p. ej. nombre@ejemplo.es"
+      },
+      "required": true
+    },
+    {
+      "key": "password",
+      "type": "secret",
+      "label": {
+        "en": "TTLock app password",
+        "fr": "Mot de passe de l'application TTLock",
+        "de": "Passwort der TTLock-App",
+        "es": "Contraseña de la aplicación TTLock"
+      },
+      "required": true
+    },
+    {
+      "key": "poll_minutes",
+      "type": "select",
+      "label": {
+        "en": "Refresh interval",
+        "fr": "Intervalle de relève",
+        "de": "Aktualisierungsintervall",
+        "es": "Intervalo de actualización"
+      },
+      "description": {
+        "en": "TTLock cannot push events to Gladys: each refresh costs API calls. The lock state is asked to the lock every 30 minutes, or as soon as a new access shows up.",
+        "fr": "TTLock ne peut pas prévenir Gladys : chaque relève coûte des appels d'API. L'état est demandé à la serrure toutes les 30 minutes, ou dès qu'un nouvel accès apparaît.",
+        "de": "TTLock kann Gladys nicht benachrichtigen: Jede Aktualisierung kostet API-Aufrufe. Der Status wird alle 30 Minuten beim Schloss abgefragt, oder sobald ein neuer Zugang erscheint.",
+        "es": "TTLock no puede avisar a Gladys: cada actualización consume llamadas a la API. El estado se pide a la cerradura cada 30 minutos, o en cuanto aparece un nuevo acceso."
+      },
+      "required": true,
+      "default": "5",
+      "options": [
+        {
+          "value": "5",
+          "label": { "en": "5 minutes", "fr": "5 minutes", "de": "5 Minuten", "es": "5 minutos" }
+        },
+        {
+          "value": "10",
+          "label": {
+            "en": "10 minutes",
+            "fr": "10 minutes",
+            "de": "10 Minuten",
+            "es": "10 minutos"
+          }
+        },
+        {
+          "value": "15",
+          "label": {
+            "en": "15 minutes",
+            "fr": "15 minutes",
+            "de": "15 Minuten",
+            "es": "15 minutos"
+          }
+        },
+        {
+          "value": "30",
+          "label": {
+            "en": "30 minutes",
+            "fr": "30 minutes",
+            "de": "30 Minuten",
+            "es": "30 minutos"
+          }
+        }
+      ]
+    },
+    {
+      "key": "battery_threshold",
+      "type": "select",
+      "label": {
+        "en": "Low battery under",
+        "fr": "Batterie faible sous",
+        "de": "Batterie schwach unter",
+        "es": "Batería baja por debajo de"
+      },
+      "description": {
+        "en": "Level under which the \"Low battery\" trigger fires, once per battery.",
+        "fr": "Niveau sous lequel le déclencheur « Batterie faible » se lance, une fois par pile.",
+        "de": "Stand, unter dem der Auslöser „Batterie schwach“ einmal pro Batterie auslöst.",
+        "es": "Nivel por debajo del cual se activa el disparador «Batería baja», una vez por pila."
+      },
+      "required": true,
+      "default": "20",
+      "options": [
+        { "value": "10", "label": { "en": "10 %", "fr": "10 %", "de": "10 %", "es": "10 %" } },
+        { "value": "15", "label": { "en": "15 %", "fr": "15 %", "de": "15 %", "es": "15 %" } },
+        { "value": "20", "label": { "en": "20 %", "fr": "20 %", "de": "20 %", "es": "20 %" } },
+        { "value": "25", "label": { "en": "25 %", "fr": "25 %", "de": "25 %", "es": "25 %" } },
+        { "value": "30", "label": { "en": "30 %", "fr": "30 %", "de": "30 %", "es": "30 %" } }
+      ]
+    },
+    {
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the device texts",
+        "fr": "Langue des textes des appareils",
+        "de": "Sprache der Gerätetexte",
+        "es": "Idioma de los textos de los dispositivos"
+      },
+      "description": {
+        "en": "Feature names (fixed when a device is added), last access and trigger texts.",
+        "fr": "Noms des fonctionnalités (figés à l'ajout d'un appareil), dernier accès et textes des déclencheurs.",
+        "de": "Namen der Funktionen (beim Hinzufügen festgelegt), letzter Zugang und Texte der Auslöser.",
+        "es": "Nombres de las funciones (fijados al añadir un dispositivo), último acceso y textos de los disparadores."
+      },
+      "required": true,
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": { "en": "English", "fr": "Anglais", "de": "Englisch", "es": "Inglés" }
+        },
+        {
+          "value": "fr",
+          "label": { "en": "French", "fr": "Français", "de": "Französisch", "es": "Francés" }
+        },
+        {
+          "value": "de",
+          "label": { "en": "German", "fr": "Allemand", "de": "Deutsch", "es": "Alemán" }
+        },
+        {
+          "value": "es",
+          "label": { "en": "Spanish", "fr": "Espagnol", "de": "Spanisch", "es": "Español" }
+        }
+      ]
+    },
+    {
+      "key": "safety",
+      "type": "section",
+      "label": {
+        "en": "Opening from Gladys",
+        "fr": "Ouvrir depuis Gladys",
+        "de": "Öffnen aus Gladys",
+        "es": "Abrir desde Gladys"
+      },
+      "description": {
+        "en": "Off by default. Once allowed, unlocking and passage mode exist only as scene actions, never as a switch, a dashboard button or a voice command. A scene that opens the door opens it for whoever stands in front of it: read the documentation first.",
+        "fr": "Désactivé par défaut. Une fois autorisés, le déverrouillage et le mode passage n'existent que comme actions de scène, jamais comme interrupteur, bouton du tableau de bord ou commande vocale. Une scène qui ouvre la porte l'ouvre pour qui se tient devant : lisez d'abord la documentation.",
+        "de": "Standardmäßig aus. Einmal erlaubt, gibt es Aufschließen und Durchgangsmodus nur als Szenenaktionen, nie als Schalter, Dashboard-Taste oder Sprachbefehl. Eine Szene, die die Tür öffnet, öffnet sie für jeden davor: Lies zuerst die Dokumentation.",
+        "es": "Desactivado por defecto. Una vez permitidos, el desbloqueo y el modo de paso solo existen como acciones de escena, nunca como interruptor, botón del panel o comando de voz. Una escena que abre la puerta la abre para quien esté delante: lea primero la documentación."
+      }
+    },
+    {
+      "key": "allow_unlock",
+      "type": "boolean",
+      "label": {
+        "en": "Allow unlocking from scenes",
+        "fr": "Autoriser le déverrouillage par les scènes",
+        "de": "Aufschließen durch Szenen erlauben",
+        "es": "Permitir el desbloqueo desde escenas"
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": false
+    },
+    {
+      "key": "allow_passage_mode",
+      "type": "boolean",
+      "label": {
+        "en": "Allow passage mode from scenes",
+        "fr": "Autoriser le mode passage par les scènes",
+        "de": "Durchgangsmodus durch Szenen erlauben",
+        "es": "Permitir el modo de paso desde escenas"
+      },
+      "required": false,
+      "default": false
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
+      "timeout_seconds": 60
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "lock_unlocked",
+      "label": {
+        "en": "Lock unlocked",
+        "fr": "Serrure déverrouillée",
+        "de": "Schloss aufgeschlossen",
+        "es": "Cerradura desbloqueada"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "Someone unlocked a lock: who and how (passcode, card, fingerprint, app...). Seen at the next refresh.",
+        "fr": "Quelqu'un a déverrouillé une serrure : qui et comment (code, carte, empreinte, application...). Vu à la relève suivante.",
+        "de": "Jemand hat ein Schloss aufgeschlossen: wer und wie (Code, Karte, Fingerabdruck, App...). Bei der nächsten Aktualisierung erkannt.",
+        "es": "Alguien desbloqueó una cerradura: quién y cómo (código, tarjeta, huella, aplicación...). Visto en la siguiente actualización."
       },
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
+          "label": { "en": "Lock", "fr": "Serrure", "de": "Schloss", "es": "Cerradura" }
         },
         {
-          "key": "target",
+          "key": "method",
           "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
+          "label": { "en": "How", "fr": "Comment", "de": "Wie", "es": "Cómo" },
           "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
+            {
+              "value": "app",
+              "label": { "en": "App", "fr": "Application", "de": "App", "es": "Aplicación" }
+            },
+            {
+              "value": "remote",
+              "label": {
+                "en": "Remote (gateway)",
+                "fr": "À distance (passerelle)",
+                "de": "Aus der Ferne (Gateway)",
+                "es": "A distancia (pasarela)"
+              }
+            },
+            {
+              "value": "passcode",
+              "label": { "en": "Passcode", "fr": "Code", "de": "Code", "es": "Código" }
+            },
+            {
+              "value": "card",
+              "label": { "en": "Card", "fr": "Carte", "de": "Karte", "es": "Tarjeta" }
+            },
+            {
+              "value": "fingerprint",
+              "label": {
+                "en": "Fingerprint",
+                "fr": "Empreinte",
+                "de": "Fingerabdruck",
+                "es": "Huella"
+              }
+            },
+            {
+              "value": "face",
+              "label": { "en": "Face", "fr": "Visage", "de": "Gesicht", "es": "Rostro" }
+            },
+            {
+              "value": "palm_vein",
+              "label": { "en": "Palm vein", "fr": "Paume", "de": "Handvenen", "es": "Palma" }
+            },
+            {
+              "value": "key",
+              "label": {
+                "en": "Mechanical key",
+                "fr": "Clé mécanique",
+                "de": "Mechanischer Schlüssel",
+                "es": "Llave mecánica"
+              }
+            },
+            {
+              "value": "fob",
+              "label": {
+                "en": "Remote control",
+                "fr": "Télécommande",
+                "de": "Fernbedienung",
+                "es": "Mando a distancia"
+              }
+            },
+            {
+              "value": "qr_code",
+              "label": { "en": "QR code", "fr": "QR code", "de": "QR-Code", "es": "Código QR" }
+            },
+            {
+              "value": "button",
+              "label": {
+                "en": "Button on the lock",
+                "fr": "Bouton de la serrure",
+                "de": "Taste am Schloss",
+                "es": "Botón de la cerradura"
+              }
+            },
+            {
+              "value": "auto",
+              "label": {
+                "en": "Automatic",
+                "fr": "Automatique",
+                "de": "Automatisch",
+                "es": "Automático"
+              }
+            }
           ]
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "lock_name",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Lock name",
+            "fr": "Nom de la serrure",
+            "de": "Name des Schlosses",
+            "es": "Nombre de la cerradura"
+          }
+        },
+        {
+          "key": "user",
+          "type": "string",
+          "label": {
+            "en": "Who (account or code name)",
+            "fr": "Qui (compte ou nom du code)",
+            "de": "Wer (Konto oder Name des Codes)",
+            "es": "Quién (cuenta o nombre del código)"
+          }
+        },
+        {
+          "key": "method_name",
+          "type": "string",
+          "label": { "en": "How", "fr": "Comment", "de": "Wie", "es": "Cómo" }
+        }
+      ]
+    },
+    {
+      "key": "battery_low",
+      "label": {
+        "en": "Low battery",
+        "fr": "Batterie faible",
+        "de": "Batterie schwach",
+        "es": "Batería baja"
+      },
+      "description": {
+        "en": "The battery of a lock fell under the configured level. Once per battery, not at every refresh.",
+        "fr": "La batterie d'une serrure est passée sous le niveau configuré. Une fois par pile, pas à chaque relève.",
+        "de": "Die Batterie eines Schlosses ist unter den eingestellten Stand gefallen. Einmal pro Batterie, nicht bei jeder Aktualisierung.",
+        "es": "La batería de una cerradura bajó del nivel configurado. Una vez por pila, no en cada actualización."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Lock", "fr": "Serrure", "de": "Schloss", "es": "Cerradura" }
+        }
+      ],
+      "variables": [
+        {
+          "key": "lock_name",
+          "type": "string",
+          "label": {
+            "en": "Lock name",
+            "fr": "Nom de la serrure",
+            "de": "Name des Schlosses",
+            "es": "Nombre de la cerradura"
+          }
+        },
+        {
+          "key": "battery",
+          "type": "number",
+          "label": {
+            "en": "Battery (%)",
+            "fr": "Batterie (%)",
+            "de": "Batterie (%)",
+            "es": "Batería (%)"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "lock",
+      "label": {
+        "en": "Lock a TTLock lock",
+        "fr": "Verrouiller une serrure TTLock",
+        "de": "TTLock-Schloss abschließen",
+        "es": "Bloquear una cerradura TTLock"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Locks through the gateway or the lock's WiFi, then reads the state back.",
+        "fr": "Verrouille par la passerelle ou le WiFi de la serrure, puis relit l'état.",
+        "de": "Schließt über das Gateway oder das WLAN des Schlosses ab und liest dann den Status.",
+        "es": "Bloquea mediante la pasarela o el WiFi de la cerradura y luego vuelve a leer el estado."
+      },
+      "timeout_seconds": 60,
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
+          "label": { "en": "Lock", "fr": "Serrure", "de": "Schloss", "es": "Cerradura" },
           "required": true
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
+          "key": "locked",
           "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "label": {
+            "en": "Reported locked",
+            "fr": "Verrouillée selon la serrure",
+            "de": "Laut Schloss abgeschlossen",
+            "es": "Bloqueada según la cerradura"
+          }
+        }
+      ]
+    },
+    {
+      "key": "unlock",
+      "label": {
+        "en": "Unlock a TTLock lock",
+        "fr": "Déverrouiller une serrure TTLock",
+        "de": "TTLock-Schloss aufschließen",
+        "es": "Desbloquear una cerradura TTLock"
+      },
+      "description": {
+        "en": "Refused unless \"Allow unlocking from scenes\" is on in the configuration. Opens the door for whoever is there.",
+        "fr": "Refusée tant que « Autoriser le déverrouillage par les scènes » est désactivé. Ouvre la porte à qui se trouve là.",
+        "de": "Abgelehnt, solange „Aufschließen durch Szenen erlauben“ aus ist. Öffnet die Tür für jeden, der davorsteht.",
+        "es": "Rechazada mientras «Permitir el desbloqueo desde escenas» esté desactivado. Abre la puerta a quien esté allí."
+      },
+      "timeout_seconds": 60,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Lock", "fr": "Serrure", "de": "Schloss", "es": "Cerradura" },
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "key": "unlocked",
+          "type": "boolean",
+          "label": {
+            "en": "Reported unlocked",
+            "fr": "Déverrouillée selon la serrure",
+            "de": "Laut Schloss aufgeschlossen",
+            "es": "Desbloqueada según la cerradura"
+          }
+        }
+      ]
+    },
+    {
+      "key": "set_passage_mode",
+      "label": {
+        "en": "TTLock passage mode",
+        "fr": "Mode passage TTLock",
+        "de": "TTLock-Durchgangsmodus",
+        "es": "Modo de paso TTLock"
+      },
+      "description": {
+        "en": "Refused unless \"Allow passage mode from scenes\" is on. On: once opened, the lock stays open all day, every day, until turned off.",
+        "fr": "Refusée tant que « Autoriser le mode passage par les scènes » est désactivé. Activé : une fois ouverte, la serrure reste ouverte, tous les jours, jusqu'à désactivation.",
+        "de": "Abgelehnt, solange „Durchgangsmodus durch Szenen erlauben“ aus ist. An: Einmal geöffnet, bleibt das Schloss jeden Tag offen, bis er ausgeschaltet wird.",
+        "es": "Rechazada mientras «Permitir el modo de paso desde escenas» esté desactivado. Activado: una vez abierta, la cerradura sigue abierta todos los días hasta desactivarlo."
+      },
+      "timeout_seconds": 60,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Lock", "fr": "Serrure", "de": "Schloss", "es": "Cerradura" },
+          "required": true
+        },
+        {
+          "key": "enabled",
+          "type": "boolean",
+          "label": {
+            "en": "Passage mode on",
+            "fr": "Mode passage activé",
+            "de": "Durchgangsmodus an",
+            "es": "Modo de paso activado"
+          },
+          "default": false
+        }
+      ],
+      "outputs": [
+        {
+          "key": "passage_mode",
+          "type": "boolean",
+          "label": {
+            "en": "Passage mode on",
+            "fr": "Mode passage activé",
+            "de": "Durchgangsmodus an",
+            "es": "Modo de paso activado"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "lock",
+      "label": {
+        "en": "TTLock lock",
+        "fr": "Serrure TTLock",
+        "de": "TTLock-Schloss",
+        "es": "Cerradura TTLock"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "State, battery, gateway and last access of a lock, with a Lock button.",
+        "fr": "État, batterie, passerelle et dernier accès d'une serrure, avec un bouton Verrouiller.",
+        "de": "Status, Batterie, Gateway und letzter Zugang eines Schlosses, mit Taste Abschließen.",
+        "es": "Estado, batería, pasarela y último acceso de una cerradura, con un botón Bloquear."
+      },
+      "icon": "lock",
+      "settings": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": { "en": "Lock", "fr": "Serrure", "de": "Schloss", "es": "Cerradura" },
+          "required": true
+        }
+      ],
+      "action_timeout_seconds": 60
     }
   ]
 }

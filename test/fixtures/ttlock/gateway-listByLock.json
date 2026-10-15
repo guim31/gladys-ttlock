@@ -1,0 +1,11 @@
+{
+  "list": [
+    {
+      "gatewayId": 78979,
+      "gatewayMac": "AA:BB:CC:00:10:01",
+      "gatewayName": "Hall gateway",
+      "rssi": -65,
+      "rssiUpdateDate": 1626674053000
+    }
+  ]
+}

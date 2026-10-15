@@ -1,77 +1,97 @@
+// -----------------------------------------------------------------------------
+// The "TTLock lock" widget: content within the core budget, bound to features
+// that exist, localized, and a Lock button — never an unlock one.
+// -----------------------------------------------------------------------------
+
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { validateWidgetContent } from '@gladysassistant/integration-sdk';
-import { createFakeGladys } from '@gladysassistant/integration-sdk/testing';
-import { buildDiscoveredDevices } from '../src/devices/index.js';
-import { simulateLanSession } from '../src/devices/plug.js';
-import { DEMO_STATUS_WIDGET, WIDGETS, refreshWidgets } from '../src/widgets.js';
-import { normalizeConfig } from '../src/config.js';
+import { WIDGET_KEY } from '../src/hub.js';
+import { FRONT_DOOR, KEY_BOX } from './helpers/fakeTtlock.js';
+import { addDevices, createWorld, deviceId, discovered } from './helpers/world.js';
 
-const gladys = createFakeGladys();
-const config = normalizeConfig();
-const demoStatus = WIDGETS[DEMO_STATUS_WIDGET];
+async function world(t) {
+  const w = await createWorld();
+  t.after(() => w.app.stop());
+  await addDevices(w);
+  return w;
+}
 
-// What the SDK passes to onWidgetGet, plus the config index.js adds.
-const getContent = (cfg = config) =>
-  demoStatus.get(gladys, { settings: {}, language: 'en', units: 'metric', config: cfg });
+const content = async (w, lockId, language = 'en') =>
+  (
+    await w.fake.widgetGet(WIDGET_KEY, {
+      settings: lockId ? { device: deviceId(w.gladys, lockId) } : {},
+      language,
+    })
+  ).data.content;
 
-test('the demo_status content is rendered exactly as sent', async () => {
-  // [] = nothing the core would drop, truncate or trim to the content budget.
-  assert.deepEqual(validateWidgetContent(await getContent()), []);
-});
-
-test('the degraded plug connection content is valid too', async () => {
-  simulateLanSession(false);
-  try {
-    const content = await getContent();
-    assert.deepEqual(validateWidgetContent(content), []);
-    const status = content.components.find((component) => component.type === 'status');
-    assert.ok(
-      status.items.some((item) => item.color === 'warning'),
-      'degraded shows a warning',
-    );
-  } finally {
-    simulateLanSession(true);
+test('the widget fits the core budget and binds features the device has', async (t) => {
+  const w = await world(t);
+  for (const lockId of [FRONT_DOOR, KEY_BOX]) {
+    const widget = await content(w, lockId);
+    assert.deepEqual(validateWidgetContent(widget), []);
+    const features = new Set(discovered(w, lockId).features.map((f) => f.external_id));
+    for (const component of widget.components.filter((c) => c.device_feature)) {
+      assert.ok(features.has(component.device_feature), component.device_feature);
+    }
   }
 });
 
-test('the live tiles reference features the integration publishes', async () => {
-  const featureIds = new Set(
-    buildDiscoveredDevices(gladys, config).flatMap((device) =>
-      device.features.map((feature) => feature.external_id),
-    ),
+test('state, gateway and last access, in the language of the dashboard', async (t) => {
+  const w = await world(t);
+  w.cloud.addRecord(FRONT_DOOR, { recordType: 8, username: 'Alex' });
+  w.clock.advance(5 * 60_000);
+  await w.hub.cycle();
+  const fr = await content(w, FRONT_DOOR, 'fr');
+  const status = fr.components.find((c) => c.type === 'status');
+  assert.deepEqual(
+    status.items.map((item) => [item.label, item.value]),
+    [
+      ['État', 'Verrouillée'],
+      ['Passerelle', 'En ligne'],
+      ['Dernier accès', status.items[2].value],
+    ],
   );
-  const liveTiles = (await getContent()).components.filter((c) => c.device_feature);
-  assert.ok(liveTiles.length > 0, 'the template demonstrates a device-bound tile');
-  for (const tile of liveTiles) {
-    assert.ok(featureIds.has(tile.device_feature), `unknown feature ${tile.device_feature}`);
-  }
+  assert.match(status.items[2].value, /^Empreinte · Alex · \d\d:\d\d$/);
+  const de = await content(w, FRONT_DOOR, 'de');
+  assert.equal(de.components.find((c) => c.type === 'button').label, 'Abschließen');
 });
 
-test('every button action of the content is handled and answers a short toast', async () => {
-  const buttons = (await getContent()).components.filter((c) => c.type === 'button' && c.action);
-  assert.ok(buttons.length > 0, 'the template demonstrates a widget action');
-  for (const { action } of buttons) {
-    const message = await demoStatus.action(gladys, {
-      actionKey: action.key,
-      params: action.params ?? {},
-      settings: {},
-      config,
-    });
-    assert.ok(message.en, 'the toast carries at least the mandatory `en` text');
-    assert.ok(message.en.length <= 200, 'toasts are capped at 200 characters');
-  }
-});
-
-test('an unknown widget action fails, so the user sees the error', async () => {
-  await assert.rejects(
-    demoStatus.action(gladys, { actionKey: 'unknown', params: {}, settings: {}, config }),
-    /Unknown widget action/,
+test('the button locks, and only locks', async (t) => {
+  const w = await world(t);
+  w.cloud.states.set(FRONT_DOOR, 1);
+  const widget = await content(w, FRONT_DOOR);
+  const buttons = widget.components.filter((c) => c.type === 'button');
+  assert.deepEqual(
+    buttons.map((b) => b.action.key),
+    ['lock'],
   );
+  const ack = await w.fake.widgetAction(
+    WIDGET_KEY,
+    'lock',
+    {},
+    {
+      settings: { device: deviceId(w.gladys, FRONT_DOOR) },
+    },
+  );
+  assert.equal(ack.success, true);
+  assert.equal(ack.data.message.en, 'Lock command sent.');
+  assert.equal(w.cloud.count('/v3/lock/lock'), 1);
+  assert.equal(w.cloud.count('/v3/lock/unlock'), 0);
 });
 
-test('refreshWidgets nudges every widget', () => {
-  const fresh = createFakeGladys();
-  refreshWidgets(fresh);
-  assert.deepEqual(fresh.fake.widgetRefreshes, Object.keys(WIDGETS));
+test('a lock without gateway shows why there is no button', async (t) => {
+  const w = await world(t);
+  const widget = await content(w, KEY_BOX);
+  assert.equal(widget.components.filter((c) => c.type === 'button').length, 0);
+  assert.match(widget.components.find((c) => c.type === 'text').text, /gateway/);
+});
+
+test('no lock chosen, or a lock gone from the account: a sentence, not an error', async (t) => {
+  const w = await world(t);
+  assert.match((await content(w, null)).components[0].text, /Choose a lock/);
+  const gone = await w.fake.widgetGet(WIDGET_KEY, {
+    settings: { device: deviceId(w.gladys, 999) },
+  });
+  assert.match(gone.data.content.components[0].text, /no longer/);
 });

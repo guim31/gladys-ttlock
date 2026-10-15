@@ -1,0 +1,12 @@
+{
+  "invalidClient": { "errcode": 10001, "errmsg": "invalid client" },
+  "invalidAccount": { "errcode": 10007, "errmsg": "invalid account or invalid password" },
+  "tokenInvalid": { "errcode": 10004, "errmsg": "token is invalide or revoked" },
+  "quota": { "errcode": 30006, "errmsg": "exceeds the restrictions of API call number" },
+  "gatewayOffline": {
+    "errcode": -3002,
+    "errmsg": "The gateway is offline. Please check and try again."
+  },
+  "notSupported": { "errcode": -4043, "errmsg": "The function is not supported for this lock" },
+  "success": { "errcode": 0, "errmsg": "none error message" }
+}

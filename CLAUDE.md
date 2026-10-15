@@ -5,9 +5,10 @@ contributors.
 
 ## What this is
 
-A Gladys Assistant **external integration**: a Node.js service (Node 22+, ESM,
-no build step) that runs in its own sandboxed Docker container and talks to
-Gladys through
+A Gladys Assistant **external integration** for **TTLock smart locks**, through
+the TTLock Open Platform cloud API: a Node.js service (Node 22+, ESM, no build
+step) that runs in its own sandboxed Docker container and talks to Gladys
+through
 [`@gladysassistant/integration-sdk`](https://github.com/GladysAssistant/integration-sdk-js),
 its only runtime dependency. It started from the official JavaScript template.
 
@@ -16,8 +17,8 @@ its only runtime dependency. It started from the official JavaScript template.
 ```bash
 npm install
 npm test                                  # node --test, the built-in runner
-node --test test/devices.test.js          # one file
-node --test --test-name-pattern "plug"    # tests whose name matches
+node --test test/hub.test.js              # one file
+node --test --test-name-pattern "battery" # tests whose name matches
 npm run lint                              # ESLint
 npm run format:check                      # Prettier, as the CI runs it
 npm run format                            # Prettier, fix in place
@@ -31,16 +32,22 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
+index.js                          SDK wiring only (registerHandlers, shutdown, connect)
+src/app.js                        registers every SDK handler on the hub (testable wiring)
+src/hub.js                        the refresh timer, records, state, triggers, commands, status
+src/ttlock/client.js              TTLock cloud client: OAuth password grant, signing, errcodes
+src/ttlock/records.js             record types -> unlock/lock + method; featureValue bits
+src/devices.js                    one Gladys device per lock (buildDevice, ids, parseLock)
 src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+src/widgets.js                    the "lock" dashboard widget (manifest `widgets`)
+src/texts.js                      every user-facing text, en/fr/de/es
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
+src/store.js, src/issues.js       /data persistence; failures logged once
+scripts/probe.mjs                 read-only probe of the real cloud (fake app, or real account)
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (same sections)
+test/                             node --test, against the SDK's fake Gladys and a fake TTLock cloud
+test/fixtures/ttlock/             anonymized API answers (TTLock docs, hass-ttlock fixtures)
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +77,9 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in English, French, German and Spanish: action
+  messages, manifest texts, feature names, widget texts (`src/texts.js`), and
+  `docs/{en,fr,de,es}.md` with the same sections. `test/i18n.test.js` checks it.
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -233,3 +241,39 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
 - Docs `en`, `fr`, `de`, `es` avec les mêmes sections.
 - Chauffe, ouverture, sécurité : ne rien rendre pilotable « comme un thermostat » ou par un assistant
   vocal quand une erreur serait dangereuse (leçon d'OctoPrint).
+
+## TTLock (propre à cette intégration)
+
+- **API** : TTLock Open Platform v3, `https://euapi.ttlock.com` (Europe et monde) ou
+  `https://cnapi.ttlock.com` (Chine), mêmes chemins. Connexion OAuth « password grant » sur
+  `/oauth2/token` : client ID + secret de l'application développeur, **compte de l'application
+  TTLock** (pas le compte développeur), mot de passe **haché MD5** en minuscules. Jeton 90 jours,
+  refresh token 10 ans. Chaque appel porte `clientId`, `accessToken` et `date` (ms ; refusé à
+  5 min d'écart, errcode 80000).
+- **TTLock répond HTTP 200 avec `errcode`** même en cas d'échec : 10001/10000 application,
+  10007 compte, 10004/10003/10011 jeton (renouveler puis rejouer une fois), 30006 quota d'appels,
+  -3002 passerelle hors ligne, -2012 pas de passerelle, -4043 non pris en charge, -2018 pas admin.
+- **Quota non publié** (errcode 30006) : l'intégration le dépense avec soin (voir `src/hub.js` et
+  le test « API budget »). `queryOpenState` passe par la passerelle et **réveille la serrure** :
+  pas à chaque relève, seulement au démarrage, après une commande, après un nouvel
+  enregistrement, et toutes les 30 min.
+- **Pas de push** : le rappel « Lock Records Notify » exige une URL publique, une par application
+  développeur. Un relais par les webhooks Gladys Plus (spec B.17) serait possible mais n'a pas été
+  fait (question ouverte).
+- **`keyboardPwd`** d'un enregistrement est le code lui-même (ou le numéro de carte) : jeté dès
+  la lecture (`parseRecord`), jamais publié ni journalisé. Un test le vérifie.
+- **États** : `queryOpenState` donne 0 verrouillée, 1 déverrouillée, 2 inconnu ; Gladys
+  `LOCK.STATE` est l'inverse (1 verrouillée, 0 déverrouillée). Inconnu : ne rien publier.
+- **Couples** : `lock/integer` serait dessiné en icône cadenas (le front associe la catégorie
+  `lock` à des icônes 0/1) : batterie en `battery/integer`. `lock/binary` écrivable = un
+  interrupteur qui ouvre la porte : l'état est un `lock/state` en lecture seule, le verrouillage
+  un `button/push`.
+- **Sécurité** (consigne de la série) : déverrouiller et mode passage désactivés par défaut,
+  seulement en action de scène, jamais en interrupteur, bouton de widget ou commande vocale.
+- **Enregistrements** : l'ordre des pages de `lockRecord/list` n'est pas documenté ; la fenêtre
+  part d'une heure avant le plus récent vu (24 h au premier regard) pour tenir dans une page de 50.
+  Le premier regard sur une serrure est de l'histoire : pas de déclencheur. Un enregistrement
+  remonté plus de 15 min après les faits non plus.
+- **Mode passage** : la doc actuelle utilise `cyclicConfig` (JSON) et `type=2` (passerelle) ;
+  hass-ttlock utilise encore l'ancien format à plat. Activé = toute la journée, tous les jours,
+  `autoUnlock=2` (ne s'ouvre pas tout seul).
