@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-15
+
 ### Added
 
 - TTLock smart locks in Gladys, through the TTLock Open Platform cloud API (Europe and China
@@ -27,4 +29,5 @@ the notes of the version's GitHub Release.
   every 30 minutes, and as soon as an access shows up.
 - Texts and documentation in English, French, German and Spanish.
 
-[Unreleased]: https://github.com/guim31/gladys-ttlock/commits/main
+[Unreleased]: https://github.com/guim31/gladys-ttlock/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/guim31/gladys-ttlock/releases/tag/v1.0.1

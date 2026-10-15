@@ -8,8 +8,8 @@
     "de": "TTLock-Schlösser über die Cloud: Status, Batterie, letzter Zugang, Abschließen, Auslöser.",
     "es": "Cerraduras TTLock por la nube: estado, batería, último acceso, bloqueo y disparadores."
   },
-  "version": "1.0.0",
-  "docker_image": "ghcr.io/guim31/gladys-ttlock:1.0.0",
+  "version": "1.0.1",
+  "docker_image": "ghcr.io/guim31/gladys-ttlock:1.0.1",
   "gladys_version": ">=5.1.0",
   "cover_image": "https://raw.githubusercontent.com/guim31/gladys-ttlock/main/cover.png",
   "categories": ["security"],
